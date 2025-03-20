@@ -1,12 +1,25 @@
 #include <iostream>
 #include <string>
 #include "Client.h"
-using namespace std;
 
+Client::Client(std::string first_name, std::string last_name, int age, 
+               std::string address, int passport_series, int passport_number)
+    : first_name(first_name), last_name(last_name), age(age), 
+      address(address), passport_series(passport_series), 
+      passport_number(passport_number) {}
 
-
-Client::Client(string first_name, string last_name, int age, string address, int passport_series, int passport_number) : first_name(first_name), last_name(last_name), age(age), address(address), passport_series(passport_series), passport_number(passport_number) {};
-
-void Client::DisplayInfoClient() {
-	cout << "Èìÿ: \t" << first_name << "\n" << "Ôàìèëèÿ: \t" << last_name << "\n" << "Àäğåñ: \t" << address;
+void Client::DisplayInfoClient(){
+    std::cout << "Ğ˜Ğ¼Ñ: \t" << first_name << "\n"
+              << "Ğ¤Ğ°Ğ¼Ğ¸Ğ»Ğ¸Ñ: \t" << last_name << "\n"
+              << "ĞĞ´Ñ€ĞµÑ: \t" << address << std::endl;
 }
+
+
+std::string Client::GetFirstName(){
+    return first_name;
+}
+
+std::string Client::GetLastName(){
+    return last_name;
+}
+
