@@ -6,6 +6,7 @@
 #include "DebitAccount.h"
 #include "CreditAccount.h"
 #include "DepositAccount.h"
+#include "CentralBank.h"
 
 void createClient(Bank& bank);
 void openAccount(Bank& bank);
@@ -14,8 +15,12 @@ void displayClientInfo(Bank& bank);
 void updateTime(Bank& bank);
 void displayClientAccounts(Bank& bank);
 void reverseTransactionMenu(Bank& bank);
+void centralBankMenu(CentralBank& centralBank);
+void transferBetweenBanksMenu(CentralBank& centralBank);
+void updateAllBanksMenu(CentralBank& centralBank);
 
 int currentClientIndex = -1;
+bool isEmployee = false;
 
 void createClient(Bank& bank) {
     std::string firstName, lastName, address;
@@ -53,6 +58,7 @@ bool loginUser(Bank& bank) {
     std::cout << "\n=== Авторизация ===\n";
     std::cout << "1. Войти как существующий клиент\n";
     std::cout << "2. Зарегистрироваться как новый клиент\n";
+    std::cout << "3. Войти как сотрудник банка\n";
     std::cout << "0. Выход\n";
     std::cout << "Ваш выбор: ";
     
@@ -94,6 +100,19 @@ bool loginUser(Bank& bank) {
     else if (choice == 2) {
         createClient(bank);
         return true;
+    }
+    else if (choice == 3) {
+        std::string password;
+        std::cout << "Введите пароль: ";
+        std::cin >> password;
+        if (password == "1234") {
+            isEmployee = true;
+            std::cout << "Вы вошли как сотрудник банка.\n";
+            return true;
+        } else {
+            std::cout << "Неверный пароль.\n";
+            return false;
+        }
     }
     
     return false;
@@ -261,7 +280,79 @@ void reverseTransactionMenu(Bank& bank) {
               << account->getBalance() << "\n";
 }
 
-void runBankInterface(Bank& bank) {
+void centralBankMenu(CentralBank& centralBank) {
+    int choice;
+    do {
+        std::cout << "\n=== Центральный Банк ===\n";
+        std::cout << "1. Установить базовую процентную ставку\n";
+        std::cout << "2. Установить базовую комиссию\n";
+        std::cout << "3. Перевести средства между банками\n";
+        std::cout << "4. Обновить состояние всех банков\n";
+        std::cout << "0. Назад\n";
+        std::cout << "Выберите действие: ";
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1: {
+                double rate;
+                std::cout << "Введите новую базовую процентную ставку: ";
+                std::cin >> rate;
+                centralBank.setBaseInterestRate(rate);
+                break;
+            }
+            case 2: {
+                double fee;
+                std::cout << "Введите новую базовую комиссию: ";
+                std::cin >> fee;
+                centralBank.setBaseFeeRate(fee);
+                break;
+            }
+            case 3:
+                transferBetweenBanksMenu(centralBank);
+                break;
+            case 4:
+                updateAllBanksMenu(centralBank);
+                break;
+            case 0:
+                std::cout << "Возврат в главное меню.\n";
+                break;
+            default:
+                std::cout << "Неверный выбор. Попробуйте снова.\n";
+        }
+    } while (choice != 0);
+}
+
+void transferBetweenBanksMenu(CentralBank& centralBank) {
+    int fromBankIndex, fromAccountIndex, toBankIndex, toAccountIndex;
+    double amount;
+
+    std::cout << "Введите индекс банка-отправителя: ";
+    std::cin >> fromBankIndex;
+    std::cout << "Введите индекс счета-отправителя: ";
+    std::cin >> fromAccountIndex;
+    std::cout << "Введите индекс банка-получателя: ";
+    std::cin >> toBankIndex;
+    std::cout << "Введите индекс счета-получателя: ";
+    std::cin >> toAccountIndex;
+    std::cout << "Введите сумму перевода: ";
+    std::cin >> amount;
+
+    if (centralBank.transferBetweenBanks(fromBankIndex, fromAccountIndex, toBankIndex, toAccountIndex, amount)) {
+        std::cout << "Перевод выполнен успешно.\n";
+    } else {
+        std::cout << "Ошибка при выполнении перевода.\n";
+    }
+}
+
+void updateAllBanksMenu(CentralBank& centralBank) {
+    int days;
+    std::cout << "Введите количество дней для обновления: ";
+    std::cin >> days;
+    centralBank.updateAllBanks(days);
+    std::cout << "Состояние всех банков обновлено на " << days << " дней.\n";
+}
+
+void runBankInterface(Bank& bank, CentralBank& centralBank) {
     if (!loginUser(bank)) {
         std::cout << "Авторизация не выполнена \n";
         return;
@@ -276,6 +367,9 @@ void runBankInterface(Bank& bank) {
         std::cout << "4. Обновить время (демо)\n";
         std::cout << "5. Сменить пользователя\n";
         std::cout << "6. Отменить транзакцию\n";
+        if (isEmployee) {
+            std::cout << "7. Управление Центральным Банком\n";
+        }
         std::cout << "0. Выход\n";
         std::cout << "Выберите действие: ";
         std::cin >> choice;
@@ -301,6 +395,13 @@ void runBankInterface(Bank& bank) {
             case 6:
                 reverseTransactionMenu(bank);
                 break;
+            case 7:
+                if (isEmployee) {
+                    centralBankMenu(centralBank);
+                } else {
+                    std::cout << "Доступ запрещен.\n";
+                }
+                break;
             case 0:
                 std::cout << "Выход из программы.\n";
                 break;
@@ -315,10 +416,11 @@ int main()
     setlocale(LC_ALL, ""); 
     
     Bank bank1(0.05, 10.0); // DepositRate = 5%, CreditRate = 10.0
+    CentralBank centralBank(0.05, 0.01); // Базовая процентная ставка = 5%, базовая комиссия = 1%
+    centralBank.addBank(bank1);
     
     std::cout << "=== Добро пожаловать в Банковскую систему ===\n";
-    runBankInterface(bank1);
+    runBankInterface(bank1, centralBank);
     
     return 0;
 }
-
